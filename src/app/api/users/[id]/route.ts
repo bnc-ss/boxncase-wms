@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       name: string
       email: string
       role: 'ADMIN' | 'EMPLOYEE'
-      password?: string
+      passwordHash?: string
     } = {
       name,
       email,
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // Hash new password if provided
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10)
+      updateData.passwordHash = await bcrypt.hash(password, 10)
     }
 
     // Update user

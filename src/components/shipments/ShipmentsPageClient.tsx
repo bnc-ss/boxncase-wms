@@ -20,7 +20,7 @@ interface Shipment {
   customerName: string
   carrier: string
   service: string
-  trackingNumber: string
+  trackingNumber: string | null
   shipmentCost: string
   shippedBy: string
   labelUrl: string | null
@@ -308,15 +308,19 @@ export function ShipmentsPageClient({
                       {shipment.service}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <a
-                        href={getTrackingUrl(shipment.carrier, shipment.trackingNumber)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm font-mono text-blue-600 hover:text-blue-800"
-                      >
-                        {shipment.trackingNumber}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {shipment.trackingNumber ? (
+                        <a
+                          href={getTrackingUrl(shipment.carrier, shipment.trackingNumber)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-mono text-blue-600 hover:text-blue-800"
+                        >
+                          {shipment.trackingNumber}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-sm text-gray-400">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                       {formatCurrency(shipment.shipmentCost)}
