@@ -1,6 +1,9 @@
-import { redirect } from 'next/navigation'
 import { auth } from '@/src/lib/auth'
-import { ShopifySync } from '@/src/components/ShopifySync'
+import { prisma } from '@/src/lib/db'
+import { redirect } from 'next/navigation'
+import { SettingsPageClient } from '@/src/components/settings/SettingsPageClient'
+import * as ups from '@/src/lib/carriers/ups'
+import * as fedex from '@/src/lib/carriers/fedex'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -9,88 +12,85 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
-  // Only admins can access settings
-  if (session.user.role !== 'ADMIN') {
-    redirect('/')
+  // Check if user is admin
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, role: true },
+  })
+
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Not Authorized</h1>
+          <p className="mt-2 text-gray-500">
+            You do not have permission to access this page.
+          </p>
+          <p className="mt-1 text-sm text-gray-400">
+            Only administrators can access settings.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Fetch all users
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
+
+  const usersData = users.map((u) => ({
+    id: u.id,
+    name: u.name || '',
+    email: u.email || '',
+    role: u.role,
+    lastLogin: u.updatedAt.toISOString(),
+    createdAt: u.createdAt.toISOString(),
+  }))
+
+  // Get carrier configuration status
+  const carriersConfig = {
+    ups: {
+      configured: ups.isConfigured(),
+    },
+    fedex: {
+      configured: fedex.isConfigured(),
+    },
+  }
+
+  // Get Shopify configuration
+  const shopifyConfig = {
+    configured: !!(process.env.SHOPIFY_STORE_DOMAIN && process.env.SHOPIFY_ACCESS_TOKEN),
+    storeDomain: process.env.SHOPIFY_STORE_DOMAIN || '',
+  }
+
+  // Get warehouse address from environment
+  const warehouseAddress = {
+    name: process.env.WAREHOUSE_NAME || '',
+    address1: process.env.WAREHOUSE_ADDRESS1 || '',
+    address2: process.env.WAREHOUSE_ADDRESS2 || '',
+    city: process.env.WAREHOUSE_CITY || '',
+    state: process.env.WAREHOUSE_STATE || '',
+    zip: process.env.WAREHOUSE_ZIP || '',
+    country: process.env.WAREHOUSE_COUNTRY || 'US',
+    phone: process.env.WAREHOUSE_PHONE || '',
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your warehouse settings and integrations
-        </p>
-      </div>
-
-      <div className="space-y-6 max-w-3xl">
-        {/* Shopify Integration */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Integrations</h2>
-          <ShopifySync />
-        </section>
-
-        {/* Warehouse Info */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Warehouse Information</h2>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Address</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {process.env.WAREHOUSE_ADDRESS_LINE1 || 'Not configured'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">City</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {process.env.WAREHOUSE_CITY || 'Not configured'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">State</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {process.env.WAREHOUSE_STATE || 'Not configured'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">ZIP Code</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {process.env.WAREHOUSE_ZIP || 'Not configured'}
-                </dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-xs text-gray-400">
-              To update warehouse address, edit the .env.local file
-            </p>
-          </div>
-        </section>
-
-        {/* System Info */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">System Information</h2>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Logged in as</dt>
-                <dd className="mt-1 text-sm text-gray-900">{session.user.name}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                <dd className="mt-1 text-sm text-gray-900">{session.user.email}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Role</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {session.user.role}
-                  </span>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-      </div>
-    </div>
+    <SettingsPageClient
+      currentUserId={currentUser.id}
+      users={usersData}
+      carriersConfig={carriersConfig}
+      shopifyConfig={shopifyConfig}
+      warehouseAddress={warehouseAddress}
+    />
   )
 }
