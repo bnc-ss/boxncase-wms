@@ -21,7 +21,6 @@ import {
   PlayCircle,
 } from 'lucide-react'
 import {
-  fulfillOrder,
   putOrderOnHold,
   cancelOrder,
   resumeOrder,
@@ -87,7 +86,7 @@ interface Order {
 
 interface ShippingRate {
   id: string
-  carrier: 'UPS' | 'FedEx' | 'USPS'
+  carrier: 'UPS' | 'FedEx'
   service: string
   serviceCode: string
   price: number
@@ -99,7 +98,6 @@ interface ShippingRate {
 interface OrderFulfillmentProps {
   order: Order
   warehouseAddress: WarehouseAddress
-  userId: string
 }
 
 const statusConfig = {
@@ -134,7 +132,6 @@ const carrierLogos: Record<string, string> = {
 export function OrderFulfillment({
   order,
   warehouseAddress,
-  userId,
 }: OrderFulfillmentProps) {
   const router = useRouter()
   const [isLoadingRates, setIsLoadingRates] = useState(false)
@@ -183,10 +180,6 @@ export function OrderFulfillment({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
-          weight: order.totalWeight || 1,
-          fromZip: warehouseAddress.zip,
-          toZip: order.shippingAddress.zip,
-          toCountry: order.shippingAddress.country,
         }),
       })
 
@@ -196,7 +189,16 @@ export function OrderFulfillment({
         throw new Error(data.error || 'Failed to get rates')
       }
 
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get rates')
+      }
+
       setRates(data.rates)
+
+      // Show warning if using mock data
+      if (data.mock) {
+        console.log('[Rates] Using mock data - carriers not configured')
+      }
     } catch (err) {
       setRatesError(err instanceof Error ? err.message : 'Failed to get rates')
     } finally {
@@ -209,52 +211,36 @@ export function OrderFulfillment({
     setError(null)
 
     try {
-      // 1. Generate the label
-      const labelResponse = await fetch('/api/shipping/label', {
+      // Call the unified purchase API that handles everything:
+      // - Creates shipment with carrier
+      // - Generates label
+      // - Decrements inventory
+      // - Marks order as shipped
+      // - Creates fulfillment in Shopify
+      const response = await fetch('/api/shipping/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
           carrier: rate.carrier,
           serviceCode: rate.serviceCode,
-          shipFrom: warehouseAddress,
-          shipTo: {
-            name: order.customerName,
-            address1: order.shippingAddress.address1,
-            address2: order.shippingAddress.address2,
-            city: order.shippingAddress.city,
-            state: order.shippingAddress.state,
-            zip: order.shippingAddress.zip,
-            country: order.shippingAddress.country,
-          },
-          weight: order.totalWeight || 1,
+          serviceName: rate.service,
         }),
       })
 
-      const labelData = await labelResponse.json()
+      const data = await response.json()
 
-      if (!labelResponse.ok) {
-        throw new Error(labelData.error || 'Failed to generate label')
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create shipment')
       }
 
-      // 2. Fulfill the order (create shipment, decrement inventory, mark shipped)
-      const result = await fulfillOrder({
-        orderId: order.id,
-        carrier: rate.carrier,
-        service: rate.service,
-        trackingNumber: labelData.trackingNumber,
-        labelUrl: labelData.labelUrl,
-        shipmentCost: rate.price,
-        userId,
-      })
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fulfill order')
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create shipment')
       }
 
       setShipSuccess({
-        trackingNumber: labelData.trackingNumber,
-        labelUrl: labelData.labelUrl,
+        trackingNumber: data.shipment.trackingNumber,
+        labelUrl: data.shipment.labelUrl,
       })
 
       // Refresh the page data

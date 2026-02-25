@@ -1,7 +1,6 @@
 import { prisma } from '@/src/lib/db'
 import { notFound } from 'next/navigation'
 import { OrderFulfillment } from '@/src/components/orders/OrderFulfillment'
-import { auth } from '@/src/lib/auth'
 
 interface PageProps {
   params: Promise<{
@@ -11,7 +10,6 @@ interface PageProps {
 
 export default async function OrderDetailPage({ params }: PageProps) {
   const { id } = await params
-  const session = await auth()
 
   const order = await prisma.order.findUnique({
     where: { id },
@@ -115,7 +113,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
     <OrderFulfillment
       order={orderData}
       warehouseAddress={warehouseAddress}
-      userId={session?.user?.id || ''}
     />
   )
 }
