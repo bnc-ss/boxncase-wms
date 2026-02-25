@@ -22,13 +22,15 @@ export interface FulfillOrderInput {
   carrier: string
   service: string
   trackingNumber: string
-  labelUrl: string
+  labelUrl?: string
+  labelData?: string // Base64 encoded label image
+  labelFormat?: string // e.g., 'PNG', 'GIF', 'ZPL'
   shipmentCost: number
   userId: string
 }
 
 export async function fulfillOrder(input: FulfillOrderInput) {
-  const { orderId, carrier, service, trackingNumber, labelUrl, shipmentCost, userId } = input
+  const { orderId, carrier, service, trackingNumber, labelUrl, labelData, labelFormat, shipmentCost, userId } = input
 
   // Get the order with items
   const order = await prisma.order.findUnique({
@@ -82,6 +84,8 @@ export async function fulfillOrder(input: FulfillOrderInput) {
         service,
         trackingNumber,
         labelUrl,
+        labelData,
+        labelFormat,
         shipmentCost: new Prisma.Decimal(shipmentCost),
         shippedByUserId: userId,
       },

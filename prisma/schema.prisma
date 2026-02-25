@@ -128,16 +128,18 @@ model OrderItem {
 }
 
 model Shipment {
-  id             String    @id @default(cuid())
-  orderId        String
-  carrier        String // e.g. "UPS", "FEDEX"
-  service        String // e.g. "GROUND"
-  trackingNumber String?
-  labelUrl       String?
-  shipmentCost   Decimal   @db.Decimal(10, 2)
-  shippedAt      DateTime?
+  id              String    @id @default(cuid())
+  orderId         String
+  carrier         String // e.g. "UPS", "FEDEX"
+  service         String // e.g. "GROUND"
+  trackingNumber  String?
+  labelUrl        String?
+  labelData       String?   @db.Text // Base64 encoded label image
+  labelFormat     String?   // e.g. "PNG", "GIF", "ZPL"
+  shipmentCost    Decimal   @db.Decimal(10, 2)
+  shippedAt       DateTime?
   shippedByUserId String
-  createdAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
 
   order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   shippedBy User  @relation(fields: [shippedByUserId], references: [id])
