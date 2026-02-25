@@ -9,8 +9,11 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user
       const isOnLogin = nextUrl.pathname.startsWith('/login')
       const isAuthApi = nextUrl.pathname.startsWith('/api/auth')
+      const isWebhook = nextUrl.pathname.startsWith('/api/webhooks')
+      const isPublicApi = nextUrl.pathname.startsWith('/api/shopify/register-webhooks')
 
-      if (isAuthApi) {
+      // Allow public routes
+      if (isAuthApi || isWebhook || isPublicApi) {
         return true
       }
 
