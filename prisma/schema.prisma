@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum TransactionType {
+  RECEIVED
+  SHIPPED
+  ADJUSTED
+  RETURNED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  CANCELLED
+  ON_HOLD
+}
+
+// Models
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  inventoryTransactions InventoryTransaction[]
+  shipments             Shipment[]
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  sku               String   @unique
+  name              String
+  description       String?
+  barcode           String?
+  weight            Decimal  @db.Decimal(10, 2) // in lbs
+  length            Decimal  @db.Decimal(10, 2) // in inches
+  width             Decimal  @db.Decimal(10, 2) // in inches
+  height            Decimal  @db.Decimal(10, 2) // in inches
+  imageUrl          String?
+  currentStock      Int      @default(0)
+  lowStockThreshold Int      @default(10)
+  shopifyProductId  String?  @unique
+  shopifyVariantId  String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  inventoryTransactions InventoryTransaction[]
+  orderItems            OrderItem[]
+
+  @@index([sku])
+  @@index([shopifyProductId])
+}
+
+model InventoryTransaction {
+  id        String          @id @default(cuid())
+  productId String
+  quantity  Int // can be negative
+  type      TransactionType
+  notes     String?
+  userId    String
+  createdAt DateTime        @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  shopifyOrderId   String      @unique
+  orderNumber      String
+  customerName     String
+  customerEmail    String
+  shippingAddress1 String
+  shippingAddress2 String?
+  shippingCity     String
+  shippingState    String
+  shippingZip      String
+  shippingCountry  String
+  status           OrderStatus @default(PENDING)
+  totalPrice       Decimal     @db.Decimal(10, 2)
+  currency         String      @default("USD")
+  shopifyCreatedAt DateTime
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  orderItems OrderItem[]
+  shipments  Shipment[]
+
+  @@index([shopifyOrderId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  productId         String?
+  shopifyLineItemId String
+  sku               String
+  name              String
+  quantity          Int
+  price             Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model Shipment {
+  id             String    @id @default(cuid())
+  orderId        String
+  carrier        String // e.g. "UPS", "FEDEX"
+  service        String // e.g. "GROUND"
+  trackingNumber String?
+  labelUrl       String?
+  shipmentCost   Decimal   @db.Decimal(10, 2)
+  shippedAt      DateTime?
+  shippedByUserId String
+  createdAt      DateTime  @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shippedBy User  @relation(fields: [shippedByUserId], references: [id])
+}
