@@ -84,8 +84,10 @@ export function SettingsPageClient({
   // Shopify state
   const [syncProductsLoading, setSyncProductsLoading] = useState(false)
   const [syncProductsResult, setSyncProductsResult] = useState<string | null>(null)
+  const [syncProductsElapsed, setSyncProductsElapsed] = useState(0)
   const [syncOrdersLoading, setSyncOrdersLoading] = useState(false)
   const [syncOrdersResult, setSyncOrdersResult] = useState<string | null>(null)
+  const [syncOrdersElapsed, setSyncOrdersElapsed] = useState(0)
   const [webhookUrl, setWebhookUrl] = useState(
     typeof window !== 'undefined' ? window.location.origin : ''
   )
@@ -184,6 +186,13 @@ export function SettingsPageClient({
   const handleSyncProducts = async () => {
     setSyncProductsLoading(true)
     setSyncProductsResult(null)
+    setSyncProductsElapsed(0)
+
+    // Start timer
+    const startTime = Date.now()
+    const timer = setInterval(() => {
+      setSyncProductsElapsed(Math.floor((Date.now() - startTime) / 1000))
+    }, 1000)
 
     try {
       const response = await fetch('/api/shopify/sync-products', {
@@ -201,6 +210,7 @@ export function SettingsPageClient({
     } catch {
       setSyncProductsResult('Error: Failed to sync products')
     } finally {
+      clearInterval(timer)
       setSyncProductsLoading(false)
     }
   }
@@ -208,6 +218,13 @@ export function SettingsPageClient({
   const handleSyncOrders = async () => {
     setSyncOrdersLoading(true)
     setSyncOrdersResult(null)
+    setSyncOrdersElapsed(0)
+
+    // Start timer
+    const startTime = Date.now()
+    const timer = setInterval(() => {
+      setSyncOrdersElapsed(Math.floor((Date.now() - startTime) / 1000))
+    }, 1000)
 
     try {
       const response = await fetch('/api/shopify/sync-orders', {
@@ -225,6 +242,7 @@ export function SettingsPageClient({
     } catch {
       setSyncOrdersResult('Error: Failed to sync orders')
     } finally {
+      clearInterval(timer)
       setSyncOrdersLoading(false)
     }
   }
@@ -448,7 +466,12 @@ export function SettingsPageClient({
                   <RefreshCw className={`h-4 w-4 ${syncProductsLoading ? 'animate-spin' : ''}`} />
                   Sync Products
                 </button>
-                {syncProductsResult && (
+                {syncProductsLoading && (
+                  <p className="mt-2 text-sm text-blue-600">
+                    Syncing... {syncProductsElapsed}s elapsed
+                  </p>
+                )}
+                {syncProductsResult && !syncProductsLoading && (
                   <p className={`mt-2 text-sm ${syncProductsResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
                     {syncProductsResult}
                   </p>
@@ -464,7 +487,12 @@ export function SettingsPageClient({
                   <RefreshCw className={`h-4 w-4 ${syncOrdersLoading ? 'animate-spin' : ''}`} />
                   Sync Orders
                 </button>
-                {syncOrdersResult && (
+                {syncOrdersLoading && (
+                  <p className="mt-2 text-sm text-blue-600">
+                    Syncing... {syncOrdersElapsed}s elapsed
+                  </p>
+                )}
+                {syncOrdersResult && !syncOrdersLoading && (
                   <p className={`mt-2 text-sm ${syncOrdersResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
                     {syncOrdersResult}
                   </p>
