@@ -166,7 +166,7 @@ export function ReceiveStockForm({ userId, initialRecentReceives }: ReceiveStock
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 overflow-visible">
         {state.errors?._form && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             {state.errors._form.map((error, i) => (
@@ -201,7 +201,7 @@ export function ReceiveStockForm({ userId, initialRecentReceives }: ReceiveStock
 
                 {/* Dropdown */}
                 {showDropdown && searchResults.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {searchResults.map((product) => (
                       <button
                         key={product.id}
@@ -234,7 +234,7 @@ export function ReceiveStockForm({ userId, initialRecentReceives }: ReceiveStock
                 )}
 
                 {showDropdown && searchQuery && searchResults.length === 0 && !isSearching && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
                     <p className="text-sm text-gray-500">No products found matching "{searchQuery}"</p>
                   </div>
                 )}
