@@ -194,18 +194,38 @@ export function SettingsPageClient({
       setSyncProductsElapsed(Math.floor((Date.now() - startTime) / 1000))
     }, 1000)
 
+    let totalCreated = 0
+    let totalUpdated = 0
+    let totalSkipped = 0
+    let pageCount = 0
+    let nextPageInfo: string | null = null
+
     try {
-      const response = await fetch('/api/shopify/sync-products', {
-        method: 'POST',
-      })
-      const data = await response.json()
+      // Paginated sync - fetch one page at a time
+      do {
+        pageCount++
+        setSyncProductsResult(`Syncing page ${pageCount}...`)
 
-      if (!response.ok) {
-        setSyncProductsResult(`Error: ${data.error}`)
-        return
-      }
+        const response = await fetch('/api/shopify/sync-products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pageInfo: nextPageInfo }),
+        })
+        const data = await response.json()
 
-      setSyncProductsResult(`Synced ${data.created} new, ${data.updated} updated products`)
+        if (!response.ok) {
+          setSyncProductsResult(`Error: ${data.error}`)
+          return
+        }
+
+        totalCreated += data.created || 0
+        totalUpdated += data.updated || 0
+        totalSkipped += data.skipped || 0
+        nextPageInfo = data.nextPageInfo || null
+
+      } while (nextPageInfo)
+
+      setSyncProductsResult(`Synced ${totalCreated} new, ${totalUpdated} updated products (${pageCount} pages)`)
       router.refresh()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'

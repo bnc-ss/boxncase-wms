@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/src/lib/auth'
 import { prisma } from '@/src/lib/db'
-import { fetchProducts } from '@/src/lib/shopify'
 import { Prisma } from '@/app/generated/prisma/client'
-
-// Extend timeout for syncing many products
-export const maxDuration = 60
 
 // Convert weight to lbs based on unit
 function convertToLbs(weight: number, unit: string): number {
@@ -27,7 +23,66 @@ function convertToLbs(weight: number, unit: string): number {
   }
 }
 
-export async function POST() {
+// Fetch one page of products from Shopify
+async function fetchProductsPage(pageInfo?: string): Promise<{
+  products: Array<{
+    id: number
+    title: string
+    body_html: string | null
+    images: Array<{ src: string }>
+    variants: Array<{
+      id: number
+      title: string
+      sku: string
+      barcode: string | null
+      weight: number
+      weight_unit: string
+    }>
+  }>
+  nextPageInfo: string | null
+}> {
+  const storeDomain = process.env.SHOPIFY_STORE_DOMAIN
+  const accessToken = process.env.SHOPIFY_ACCESS_TOKEN
+
+  if (!storeDomain || !accessToken) {
+    throw new Error('Missing Shopify configuration')
+  }
+
+  const baseUrl = `https://${storeDomain}/admin/api/2024-10`
+  let url = `${baseUrl}/products.json?limit=50`
+
+  if (pageInfo) {
+    url = `${baseUrl}/products.json?limit=50&page_info=${pageInfo}`
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Shopify API error: ${response.status} ${response.statusText}`)
+  }
+
+  const data = await response.json()
+
+  // Parse Link header for pagination
+  const linkHeader = response.headers.get('Link')
+  let nextPageInfo: string | null = null
+
+  if (linkHeader) {
+    const nextMatch = linkHeader.match(/<[^>]+page_info=([^>&]+)[^>]*>;\s*rel="next"/)
+    if (nextMatch) {
+      nextPageInfo = nextMatch[1]
+    }
+  }
+
+  return { products: data.products, nextPageInfo }
+}
+
+export async function POST(request: Request) {
   try {
     // Check authentication
     const session = await auth()
@@ -40,10 +95,19 @@ export async function POST() {
       return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
-    console.log('[Sync] Starting Shopify product sync...')
+    // Get pageInfo from request body for pagination
+    let pageInfo: string | undefined
+    try {
+      const body = await request.json()
+      pageInfo = body.pageInfo
+    } catch {
+      // No body or invalid JSON - start from beginning
+    }
 
-    // Fetch all products from Shopify
-    const shopifyProducts = await fetchProducts()
+    console.log(`[Sync] Syncing products page${pageInfo ? ` (pageInfo: ${pageInfo.slice(0, 20)}...)` : ' 1'}...`)
+
+    // Fetch one page of products
+    const { products: shopifyProducts, nextPageInfo } = await fetchProductsPage(pageInfo)
 
     let created = 0
     let updated = 0
@@ -99,7 +163,6 @@ export async function POST() {
                 imageUrl: productImage,
                 shopifyProductId,
                 shopifyVariantId,
-                // Note: NOT updating currentStock - we manage that ourselves
               },
             })
             updated++
@@ -132,16 +195,15 @@ export async function POST() {
       }
     }
 
-    const total = created + updated
-
-    console.log(`[Sync] Complete: ${created} created, ${updated} updated, ${skipped} skipped`)
+    console.log(`[Sync] Page complete: ${created} created, ${updated} updated, ${skipped} skipped`)
 
     return NextResponse.json({
       success: true,
       created,
       updated,
       skipped,
-      total,
+      hasMore: !!nextPageInfo,
+      nextPageInfo,
       errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
