@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/shopify/sync-products/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/shopify/sync-orders/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
