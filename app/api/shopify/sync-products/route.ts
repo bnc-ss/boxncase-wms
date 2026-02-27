@@ -49,10 +49,11 @@ async function fetchProductsPage(pageInfo?: string): Promise<{
   }
 
   const baseUrl = `https://${storeDomain}/admin/api/2024-10`
-  let url = `${baseUrl}/products.json?limit=50`
+  // Use smaller batch size to stay within 10s timeout on Hobby plan
+  let url = `${baseUrl}/products.json?limit=20`
 
   if (pageInfo) {
-    url = `${baseUrl}/products.json?limit=50&page_info=${pageInfo}`
+    url = `${baseUrl}/products.json?limit=20&page_info=${pageInfo}`
   }
 
   const response = await fetch(url, {

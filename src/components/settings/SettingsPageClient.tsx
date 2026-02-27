@@ -490,9 +490,11 @@ export function SettingsPageClient({
                   Sync Products
                 </button>
                 {syncProductsLoading && (
-                  <p className="mt-2 text-sm text-blue-600">
-                    Syncing... {syncProductsElapsed}s elapsed
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-sm text-blue-600">
+                      {syncProductsResult || 'Starting sync...'} ({syncProductsElapsed}s)
+                    </p>
+                  </div>
                 )}
                 {syncProductsResult && !syncProductsLoading && (
                   <p className={`mt-2 text-sm ${syncProductsResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
@@ -511,9 +513,11 @@ export function SettingsPageClient({
                   Sync Orders
                 </button>
                 {syncOrdersLoading && (
-                  <p className="mt-2 text-sm text-blue-600">
-                    Syncing... {syncOrdersElapsed}s elapsed
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-sm text-blue-600">
+                      {syncOrdersResult || 'Starting sync...'} ({syncOrdersElapsed}s)
+                    </p>
+                  </div>
                 )}
                 {syncOrdersResult && !syncOrdersLoading && (
                   <p className={`mt-2 text-sm ${syncOrdersResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
