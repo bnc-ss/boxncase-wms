@@ -207,8 +207,9 @@ export function SettingsPageClient({
 
       setSyncProductsResult(`Synced ${data.created} new, ${data.updated} updated products`)
       router.refresh()
-    } catch {
-      setSyncProductsResult('Error: Failed to sync products')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      setSyncProductsResult(`Error: ${message}`)
     } finally {
       clearInterval(timer)
       setSyncProductsLoading(false)
@@ -239,8 +240,9 @@ export function SettingsPageClient({
 
       setSyncOrdersResult(`Synced ${data.created} new, ${data.updated} updated orders`)
       router.refresh()
-    } catch {
-      setSyncOrdersResult('Error: Failed to sync orders')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      setSyncOrdersResult(`Error: ${message}`)
     } finally {
       clearInterval(timer)
       setSyncOrdersLoading(false)
