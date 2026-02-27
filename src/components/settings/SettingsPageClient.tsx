@@ -198,18 +198,19 @@ export function SettingsPageClient({
     let totalUpdated = 0
     let totalSkipped = 0
     let pageCount = 0
-    let nextPageInfo: string | null = null
+    let currentPageInfo: string | undefined = undefined
 
     try {
       // Paginated sync - fetch one page at a time
-      do {
+      let hasMore = true
+      while (hasMore) {
         pageCount++
         setSyncProductsResult(`Syncing page ${pageCount}...`)
 
-        const response = await fetch('/api/shopify/sync-products', {
+        const response: Response = await fetch('/api/shopify/sync-products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pageInfo: nextPageInfo }),
+          body: JSON.stringify({ pageInfo: currentPageInfo }),
         })
         const data = await response.json()
 
@@ -221,9 +222,9 @@ export function SettingsPageClient({
         totalCreated += data.created || 0
         totalUpdated += data.updated || 0
         totalSkipped += data.skipped || 0
-        nextPageInfo = data.nextPageInfo || null
-
-      } while (nextPageInfo)
+        currentPageInfo = data.nextPageInfo
+        hasMore = !!data.nextPageInfo
+      }
 
       setSyncProductsResult(`Synced ${totalCreated} new, ${totalUpdated} updated products (${pageCount} pages)`)
       router.refresh()
