@@ -4,6 +4,9 @@ import { prisma } from '@/src/lib/db'
 import { fetchProducts } from '@/src/lib/shopify'
 import { Prisma } from '@/app/generated/prisma/client'
 
+// Extend timeout for syncing many products
+export const maxDuration = 60
+
 // Convert weight to lbs based on unit
 function convertToLbs(weight: number, unit: string): number {
   switch (unit.toLowerCase()) {

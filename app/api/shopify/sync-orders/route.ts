@@ -4,6 +4,9 @@ import { prisma } from '@/src/lib/db'
 import { fetchOrders } from '@/src/lib/shopify'
 import { Prisma, OrderStatus } from '@/app/generated/prisma/client'
 
+// Extend timeout for syncing many orders
+export const maxDuration = 60
+
 // Map Shopify fulfillment status to our OrderStatus
 function mapFulfillmentStatus(fulfillmentStatus: string | null): OrderStatus {
   switch (fulfillmentStatus) {
