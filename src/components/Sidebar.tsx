@@ -66,12 +66,12 @@ export function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
                 <Image
                   src="/boxncase-logo.png"
                   alt="BoxNCase"
-                  width={140}
-                  height={70}
+                  width={170}
+                  height={85}
                   className="object-contain"
                   priority
                 />
-                <span className="mt-2 text-[10px] font-medium tracking-wide text-[#1F2933]">
+                <span className="mt-2 text-xs font-medium tracking-wide text-[#1F2933]">
                   Warehouse Management System
                 </span>
               </div>
@@ -111,13 +111,13 @@ export function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
 
           {/* Footer - Powered By */}
           <div className="px-6 py-4 border-t border-gray-100">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-xs text-gray-400">Powered by</span>
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="text-sm text-gray-400">Powered by</span>
               <Image
                 src="/powered-by-icon.png"
                 alt="Powered by"
-                width={14}
-                height={14}
+                width={18}
+                height={18}
                 className="object-contain"
               />
             </div>
