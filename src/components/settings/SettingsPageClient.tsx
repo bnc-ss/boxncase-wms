@@ -205,7 +205,8 @@ export function SettingsPageClient({
       let hasMore = true
       while (hasMore) {
         pageCount++
-        setSyncProductsResult(`Syncing page ${pageCount}...`)
+        const totalSoFar = totalCreated + totalUpdated + totalSkipped
+        setSyncProductsResult(`Page ${pageCount} - ${totalSoFar} products synced`)
 
         const response: Response = await fetch('/api/shopify/sync-products', {
           method: 'POST',
@@ -226,7 +227,8 @@ export function SettingsPageClient({
         hasMore = !!data.nextPageInfo
       }
 
-      setSyncProductsResult(`Synced ${totalCreated} new, ${totalUpdated} updated products (${pageCount} pages)`)
+      const totalProducts = totalCreated + totalUpdated
+      setSyncProductsResult(`Done! ${totalCreated} new, ${totalUpdated} updated (${totalProducts} total)`)
       router.refresh()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
