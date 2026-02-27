@@ -23,7 +23,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Inventory', href: '/inventory', icon: Package },
-  { name: 'Receive Stock', href: '/inventory/receive', icon: Truck },
+  { name: 'Receiving', href: '/inventory/receive', icon: Truck },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Shipments', href: '/shipments', icon: Send },
   { name: 'Settings', href: '/settings', icon: Settings, adminOnly: true },
@@ -87,9 +87,16 @@ export function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {filteredNavItems.map((item) => {
+              // Check if there's a more specific route that matches
+              const hasMoreSpecificMatch = filteredNavItems.some(
+                (other) =>
+                  other.href !== item.href &&
+                  other.href.startsWith(item.href) &&
+                  pathname.startsWith(other.href)
+              )
               const isActive =
                 pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(item.href))
+                (item.href !== '/' && pathname.startsWith(item.href) && !hasMoreSpecificMatch)
 
               return (
                 <Link
