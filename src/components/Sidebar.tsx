@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   Home,
@@ -53,20 +54,34 @@ export function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-slate-800">
-            <span className="text-xl font-bold text-white">BoxNCase</span>
-            <button
-              onClick={onClose}
-              className="lg:hidden text-slate-400 hover:text-white"
-            >
-              <X className="h-6 w-6" />
-            </button>
+          {/* Logo Section */}
+          <div className="flex flex-col items-center px-6 py-6 border-b border-gray-100">
+            <div className="flex items-center justify-between w-full mb-4 lg:justify-center">
+              <div className="flex flex-col items-center">
+                <Image
+                  src="/boxncase-logo.png"
+                  alt="BoxNCase"
+                  width={140}
+                  height={70}
+                  className="object-contain"
+                  priority
+                />
+                <span className="mt-2 text-xs font-medium tracking-wide text-[#1F2933] uppercase">
+                  Warehouse Management System
+                </span>
+              </div>
+              <button
+                onClick={onClose}
+                className="lg:hidden text-gray-400 hover:text-gray-600 absolute right-4 top-4"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -83,20 +98,29 @@ export function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
                   onClick={onClose}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-[#3264B7] text-white'
+                      : 'text-[#1F2933] hover:bg-gray-100'
                   }`}
                 >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? '' : 'text-[#499C70]'}`} />
                   {item.name}
                 </Link>
               )
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-slate-800">
-            <p className="text-xs text-slate-500">Warehouse Management System</p>
+          {/* Footer - Powered By */}
+          <div className="px-6 py-4 border-t border-gray-100">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xs text-gray-400">Powered by</span>
+              <Image
+                src="/powered-by-icon.png"
+                alt="Powered by"
+                width={16}
+                height={16}
+                className="object-contain"
+              />
+            </div>
           </div>
         </div>
       </aside>

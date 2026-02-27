@@ -14,7 +14,7 @@ export function DashboardLayout({ children, userName, userRole }: DashboardLayou
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#F4F6F8]">
       <Sidebar
         userRole={userRole}
         isOpen={sidebarOpen}
